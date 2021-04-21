@@ -18,7 +18,7 @@ struct Item{
     int lenKey2;
 };
 
-int createItem(FILE* fd, char* info, int key1, char* key2); //ВОЗВРАЩАЕТ ОФФСЕТ АЙТЕМА
+int createItem(FILE* fd, char* info, int key1, char* key2, int* key2offset, int* key2len); //ВОЗВРАЩАЕТ ОФФСЕТ АЙТЕМА
 Item* getItem(FILE* fd, int offset);
 char* getInfo(FILE* fd, Item* item);
 void printInfo(FILE* fd, int offsetItem);

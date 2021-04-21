@@ -12,8 +12,6 @@ Node1* loadNode1(FILE* fd, int offsetNode){
     Node1* node1 = (Node1*)malloc(sizeof(Node1));
     fseek(fd, offsetNode, SEEK_SET);
     fread(node1, 1, sizeof(Node1), fd);
-    printf("Загружается нод, в нем имеется: release %d, nextOffset %d, itemOffset %d.\n",
-           node1->release, node1->nextOffset, node1->itemOffset);
     Node1* reader = node1;
     while(reader->nextOffset != 0){
         Node1* helper = reader;
@@ -276,4 +274,24 @@ void freeKeySpace1(KeySpace1* keySpace1, int nsize1){
 //        cleaner++;
 //    }
     free(keySpace1);
+}
+
+void deleteKey1Offset(KeySpace1* keySpace1, int key1, int itemOffset, int* nsize1){
+    KeySpace1* seeker = keySpace1;
+    Node1* node = NULL;
+    for(int i = 0; i < (*nsize1); i++){
+        if(seeker->key == key1){
+            node = seeker->node;
+            break;
+        }
+        if((*nsize1) == (i + 1))
+            return;
+        seeker++;
+    }
+    while(node != NULL){
+        if(node->itemOffset == itemOffset)
+            break;
+        node = node->next;
+    }
+    removeKeySpace1(keySpace1, nsize1, key1, node->release);
 }

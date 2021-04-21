@@ -44,5 +44,6 @@ Item* findRelease(FILE* fd, KeySpace1* keySpace1, int release);
 int saveKeySpace1(FILE* fd, KeySpace1* keySpace1, int nsize1, int maxsize1);
 int checkKeySpace1(KeySpace1* keySpace1, int key, int maxsize1, int nsize1);
 void freeKeySpace1(KeySpace1* keySpace1, int nsize1);
+void deleteKey1Offset(KeySpace1* keySpace1, int key1, int itemOffset, int* nsize1);
 
 #endif //LAB3_KEYSPACE1_H

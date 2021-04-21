@@ -24,13 +24,15 @@ char* getKey2(FILE* fd, Item* item){
     return key2;
 }
 
-int createItem(FILE* fd, char* info, int key1, char* key2){
+int createItem(FILE* fd, char* info, int key1, char* key2, int* key2offset, int* key2len){
     Item* item = (Item*)malloc(sizeof(Item));
     item->key1 = key1;
     fseek(fd, 0, SEEK_END);
 
     item->offsetKey2 = ftell(fd);
+    (*key2offset) = item->offsetKey2;
     item->lenKey2 = (int)strlen(key2) + 1;
+    (*key2len) = item->lenKey2;
     fwrite(key2, 1, item->lenKey2, fd);
 
     item->offsetInfo = ftell(fd);
