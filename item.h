@@ -23,7 +23,8 @@ Item* getItem(FILE* fd, int offset);
 char* getInfo(FILE* fd, Item* item);
 void printInfo(FILE* fd, int offsetItem);
 void freeItem(FILE* fd, int offsetItem);
-int copyItem(FILE* fd, int offsetItem);
+char* getKey2(FILE* fd, Item* item);
+//int copyItem(FILE* fd, int offsetItem);
 void printInfoItem(FILE* fd, Item* item);
 
 #endif //LAB3_ITEM_H

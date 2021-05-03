@@ -39,8 +39,9 @@ Table* loadTable(FILE* fd);
 void printTable1(FILE* fd, Table* table);
 Table* getByKey1(FILE* fd, Table* table, int key1);
 int uploadTable(FILE* fd, Table** table);
-int addTable(FILE* fd, Table* table, int key1, char* info);
+int addTable(FILE* fd, Table* table, int key1, char* key2, char* info);
 void endOfWork(FILE* fd, Table* table);
+Item* findFullKey(FILE* fd, Table* table, int key1, char* key2);
 
 /* TODO:
  *  Сделать вывод первой штуковины через findByKey_1

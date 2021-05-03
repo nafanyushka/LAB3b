@@ -23,12 +23,12 @@ struct KeySpace2{
 };
 
 KeySpace2* initKeySpace2(int maxsize2);
-KeySpace2* loadKeySpace2(FILE* fd, int maxsize2);
+KeySpace2* loadKeySpace2(FILE* fd, int maxsize2, int maxsize1);
 int addItemKeySpace2(KeySpace2* keySpace2, char* key2, int itemOffset, int index);
 void printKeySpace2(FILE* fd, KeySpace2* keySpace2, int maxsize2);
 int removeKeySpace2(FILE* fd, KeySpace2* keySpace2, char* key2, int maxsize2, int* key1);
-Item* findKey2(FILE* fd, KeySpace2* keySpace2, char* key2, int maxsize2);
-void saveKeySpace2(FILE* fd, KeySpace2* keySpace2, int maxsize2);
+int findKey2(KeySpace2* keySpace2, char* key2, int maxsize2);
+void saveKeySpace2(FILE* fd, KeySpace2* keySpace2, int maxsize2, int maxsize1);
 int checkKeySpace2(KeySpace2* keySpace2, char* key2, int maxsize2);
 void freeKeySpace2(KeySpace2* keySpace2, int maxsize2);
 

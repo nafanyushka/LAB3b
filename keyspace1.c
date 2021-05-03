@@ -63,13 +63,23 @@ Node1* copyNode(Node1* node){
     return newNode;
 }
 
-void freeNode(Node1* node){
+char** freeNode(FILE* fd, int* deletions, Node1* node){
     Node1* cleaner = node;
+    char** keys = (char**)malloc(sizeof(char*) * cleaner->release);
+    char** writer = keys;
+    Item* item;
+    *deletions = node->release;
     while(cleaner != NULL){
         Node1* helper = cleaner;
+        item = getItem(fd, cleaner->itemOffset);
+        *writer = getKey2(fd, item);
+        free(item);
         cleaner = cleaner->next;
         free(helper);
+        if(cleaner != NULL)
+            writer++;
     }
+    return keys;
 }
 
 int saveNode(FILE* fd, Node1* node, int prevOffset){
@@ -117,6 +127,7 @@ KeySpace1* initKeySpace1(int maxsize1){
 KeySpace1* loadKeySpace1(FILE *fd, int maxsize1, int nsize1) {
     KeySpace1* keySpace1 = initKeySpace1(maxsize1);
     fread(keySpace1, 1, sizeof(KeySpace1) * maxsize1, fd);
+    int offset = ftell(fd);
     KeySpace1* loader = keySpace1;
 
     for(int i = 0; i < nsize1; i++){
@@ -124,6 +135,7 @@ KeySpace1* loadKeySpace1(FILE *fd, int maxsize1, int nsize1) {
         loader++;
     }
 
+    fseek(fd, offset, SEEK_SET);
     return keySpace1;
 }
 
@@ -199,31 +211,36 @@ KeySpace1* findKey1(KeySpace1* keySpace1, int key1, int nsize1){
 
 int push(KeySpace1* keySpace1, KeySpace1* pointer, int nsize1){
     pointer->key = keySpace1[(nsize1) - 1].key;
+    keySpace1[(nsize1) - 1].key = 0;
     pointer->node = keySpace1[(nsize1) - 1].node;
     pointer->nodeOffset = keySpace1[(nsize1) - 1].nodeOffset;
+    keySpace1[(nsize1) - 1].nodeOffset = 0;
     keySpace1[(nsize1) - 1].node = NULL;
     (nsize1)--;
     return nsize1;
 }
 
-int removeKeySpace1(KeySpace1* keySpace1, int* nsize1, int key, int release){
+char** removeKeySpace1(FILE* fd, KeySpace1* keySpace1, int* nsize1, int key, int* deletions, int release){
     KeySpace1* pointer = keySpace1;
     int index = 0;
     for(index; index < *nsize1; index++){
         if(pointer->key == key)
             break;
         if(index == (*nsize1) - 1){
-            return -1; //НЕ НАЙДЕН ЭЛЕМЕНТ С КЛЮЧИКОМ
+            *deletions = 0;
+            return NULL; //НЕ НАЙДЕН ЭЛЕМЕНТ С КЛЮЧИКОМ
         }
         pointer++;
     }
-    if(release > pointer->node->release || release < 0)
-        return 0; //НЕТ ТАКОЙ ВЕРСИИ
+    if(release > pointer->node->release || release < 0) {
+        *deletions = 0;
+        return NULL; //НЕТ ТАКОЙ ВЕРСИИ
+    }
     if(release == 0){
-        freeNode(pointer->node);
+        char** keys = freeNode(fd, deletions, pointer->node);
         pointer->node = NULL;
         (*nsize1) = push(keySpace1, pointer, *nsize1);
-        return 1; //УДАЧНОЕ УДАЛЕНИЕ НОДА
+        return keys; //УДАЧНОЕ УДАЛЕНИЕ НОДА
     }
     Node1* node = pointer->node;
     Node1* helper = node;
@@ -234,14 +251,29 @@ int removeKeySpace1(KeySpace1* keySpace1, int* nsize1, int key, int release){
     }
     if(helper == node){
         pointer->node = NULL;
+        Item* item = getItem(fd, node->itemOffset);
+        char** keys = malloc(sizeof(char*));
+        *keys = getKey2(fd, item);
+        Node1* next = node->next;
+        free(item);
         free(node);
-        (*nsize1) = push(keySpace1, pointer, *nsize1);
-        return 1; // УДАЛЕНИЕ ОДНОГО ЭЛЕМЕНТИКА ПОСЛЕДНЕГО
+        if(next == NULL)
+            (*nsize1) = push(keySpace1, pointer, *nsize1);
+        else{
+            pointer->node = next;
+        }
+        *deletions = 1;
+        return keys; // УДАЛЕНИЕ ОДНОГО ЭЛЕМЕНТИКА ПОСЛЕДНЕГО
     }
     helper->next = node->next;
     helper->nextOffset = node->nextOffset;
+    Item* item = getItem(fd, node->itemOffset);
+    char** keys = malloc(sizeof(char*));
+    *keys = getKey2(fd, item);
+    *deletions = 1;
+    free(item);
     free(node);
-    return 1; //УДАЧНОЕ УДАЛЕНИЕ ВЕРСИИ
+    return keys; //УДАЧНОЕ УДАЛЕНИЕ ВЕРСИИ
 }
 
 Item* findRelease(FILE* fd, KeySpace1* keySpace1, int release){
@@ -276,7 +308,7 @@ void freeKeySpace1(KeySpace1* keySpace1, int nsize1){
     free(keySpace1);
 }
 
-void deleteKey1Offset(KeySpace1* keySpace1, int key1, int itemOffset, int* nsize1){
+void deleteKey1Offset(FILE* fd, KeySpace1* keySpace1, int key1, int itemOffset, int* nsize1){
     KeySpace1* seeker = keySpace1;
     Node1* node = NULL;
     for(int i = 0; i < (*nsize1); i++){
@@ -293,5 +325,27 @@ void deleteKey1Offset(KeySpace1* keySpace1, int key1, int itemOffset, int* nsize
             break;
         node = node->next;
     }
-    removeKeySpace1(keySpace1, nsize1, key1, node->release);
+    char** key;
+    int i;
+    key = removeKeySpace1(fd, keySpace1, nsize1, key1, &i, node->release);
+    free(key);
+}
+
+Item* findOffset1(FILE* fd, KeySpace1* keySpace1, int key, int itemOffset, int nsize){
+    KeySpace1* finder = keySpace1;
+    for(int i = 0; i < nsize; i++){
+        if(finder->key == key)
+            break;
+        if((i + 1) == nsize)
+            return NULL;
+        finder++;
+    }
+    Node1* node = finder->node;
+    while(node != NULL){
+        if(node->itemOffset == itemOffset){
+            return getItem(fd, itemOffset);
+        }
+        node = node->next;
+    }
+    return NULL;
 }

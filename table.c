@@ -30,6 +30,7 @@ Table* loadTable(FILE* fd){
     fread(table, 1, sizeof(Table), fd);
 
     table->keySpace1 = loadKeySpace1(fd, table->maxsize1, table->nsize1);
+    table->keySpace2 = loadKeySpace2(fd, table->maxsize2, table->maxsize1);
     printf("Загрузалась короче табла и кейспейс, вот первый ключ: %d, nsize1 = %d, maxsize1 = %d, maxsize2 = %d,"
            " nodeOffset %d\n",
            table->keySpace1->key, table->nsize1, table->maxsize1, table->maxsize2, table->keySpace1->nodeOffset     );
@@ -39,15 +40,19 @@ Table* loadTable(FILE* fd){
     return table;
 }
 
-int addTable(FILE* fd, Table* table, int key1, char* info){
-    if(checkKeySpace1(table->keySpace1, key1, table->maxsize1, table->nsize1)){
+int addTable(FILE* fd, Table* table, int key1, char* key2, char* info){
+    int index = checkKeySpace2(table->keySpace2, key2, table->maxsize2);
+    if(checkKeySpace1(table->keySpace1, key1, table->maxsize1, table->nsize1) && index != -1){
         fseek(fd, 0, SEEK_END);
-        int offset = createItem(fd, info, key1, "");
+        int offset = createItem(fd, info, key1, key2, &table->keySpace2[index].keyOffset,
+                                &table->keySpace2[index].keyLen);
         addItemKeySpace1(table->keySpace1, offset, key1, table->maxsize1, &table->nsize1);
+        addItemKeySpace2(table->keySpace2, key2, offset, index);
         free(info);
         return 1;
     }
     else{
+        free(key2);
         free(info);
         return 0;
     }
@@ -75,6 +80,8 @@ int uploadTable(FILE* fd, Table** table){
     fseek(fd, 0, SEEK_SET);
     fwrite(*table, 1, sizeof(Table), fd);
     saveKeySpace1(fd, (*table)->keySpace1, (*table)->nsize1, (*table)->maxsize1);
+    fseek(fd, sizeof(Table) + sizeof(KeySpace1) * (*table)->maxsize2, SEEK_SET);
+    saveKeySpace2(fd, (*table)->keySpace2, (*table)->maxsize2, (*table)->maxsize1);
 //    free((*table)->keySpace1);
     return 0;
 }
@@ -82,5 +89,14 @@ int uploadTable(FILE* fd, Table** table){
 void endOfWork(FILE* fd, Table* table){
     uploadTable(fd, &table);
     freeKeySpace1(table->keySpace1, table->nsize1);
+    freeKeySpace2(table->keySpace2, table->maxsize2);
     free(table);
+}
+
+Item* findFullKey(FILE* fd, Table* table, int key1, char* key2){
+    int offset = findKey2(table->keySpace2, key2, table->maxsize2);
+    if(offset == 0)
+        return NULL;
+    Item* item = findOffset1(fd, table->keySpace1, key1, offset, table->nsize1);
+    return item;
 }

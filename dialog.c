@@ -45,30 +45,44 @@ void mainDialogue(FILE* fd, Table* table){
 
     do {
         printf("\nВведите 1, чтобы посмотреть таблицу.\n"
-               "Введите 2, чтобы добавить элемент в таблицу.\n"
-               "Введите 3, чтобы найти элемент(ы) по ключу и версии.\n"
-               "Введите 4, чтобы удалить элемент(ы) по ключу.\n"
+               "Введите 2, чтобы вывести второе пространство.\n"
+               "Введите 3, чтобы добавить элемент в таблицу.\n"
+               "Введите 4, чтобы найти элемент(ы) по первому ключу и версии.\n"
+               "Введите 5, чтобы найти элемент по второму ключу.\n"
+               "Введите 6, чтобы найти элемент по составному ключу.\n"
+               "Введите 7, чтобы удалить элемент(ы) по первому ключу.\n"
+               "Введите 8, чтобы удалить элемент по второму ключу.\n"
+               "Введите 9, чтобы удалить элемент по составному ключу.\n"
                "Введите 0, чтобы выйти из приложения.\n\n"
                "\tВаш выбор: ");
         choose = getInt();
         Table* newTable;
         Item* item;
-        char* info;
+        char** keys;
+        char* info, * key2;
         int key1, release, bug;
         switch(choose){
             case 1:
                 printTable1(fd, table);
                 break;
             case 2:
+                printKeySpace2(fd, table->keySpace2, table->maxsize2);
+                break;
+            case 3:
                 printf("Введите ключ первого пространства: ");
                 key1 = getInt();
+
+                do{
+                    printf("Введите ключ второго пространства: ");
+                    key2 = get_String();
+                }while(strlen(key2) < 1);
 
                 do{
                     printf("Введите информацию: ");
                     info = get_String();
                 }while(strlen(info) < 1);
 
-                if(addTable(fd, table, key1, info)){
+                if(addTable(fd, table, key1, key2, info)){
                     printf("Успещное обновление таблицы.\n");
                 }
                 else{
@@ -76,7 +90,7 @@ void mainDialogue(FILE* fd, Table* table){
                 }
                 free(info);
                 break;
-            case 3:
+            case 4:
                 printf("Введите ключ первого пространства: ");
                 key1 = getInt();
                 newTable = getByKey1(fd, table, key1);
@@ -111,22 +125,99 @@ void mainDialogue(FILE* fd, Table* table){
                     free(newTable);
                 }
                 break;
-            case 4:
+            case 5:
+                do{
+                    printf("Введите ключ второго пространства: ");
+                    key2 = get_String();
+                }while(strlen(key2) < 1);
+                bug = findKey2(table->keySpace2, key2, table->maxsize2);
+                if(bug == 0)
+                    printf("Не найден такой объект.\n");
+                else
+                    printInfo(fd, bug);
+                free(key2);
+                break;
+            case 6:
+                printf("Введите ключ первого пространства: ");
+                key1 = getInt();
+                do{
+                    printf("Введите ключ второго пространства: ");
+                    key2 = get_String();
+                }while(strlen(key2) < 1);
+                item = findFullKey(fd, table, key1, key2);
+                if(item == NULL)
+                    printf("Не удалось найти такого объекта.\n");
+                else{
+                    printInfoItem(fd, item);
+                    free(item);
+                }
+                break;
+            case 7:
                 printf("Введите ключ для первого пространства: ");
                 key1 = getInt();
                 printf("Введите версию для удаления, либо 0 для удаления всех элементов с введенным ключом: ");
                 release = getInt();
 
-                bug = removeKeySpace1(table->keySpace1, &(table->nsize1), key1, release);
-                if(bug == 1){
-                    printf("Удачное удаление.\n");
-                }
+                keys = removeKeySpace1(fd, table->keySpace1, &(table->nsize1), key1, &bug, release);
                 if(bug == 0){
-                    printf("Ключ найден, но версия не найдена.\n");
+                    printf("Не найден предмет с таким ключом.\n");
                 }
-                if(bug == -1){
-                    printf("Ключ не найден.\n");
+                if(bug == 1){
+                    removeKeySpace2(fd, table->keySpace2, *keys, table->maxsize2, &key1);
+                    free(*keys);
+                    free(keys);
                 }
+
+                if(bug > 1){
+                    char** key = keys;
+                    for(int i = 0; i < bug; i++){
+                        removeKeySpace2(fd, table->keySpace2, *key, table->maxsize2, &key1);
+                        free(*key);
+                        if(i + 1 != bug) {
+                            key++;
+                        }
+                    }
+//                    free(&keys);
+                }
+                break;
+            case 8:
+                do{
+                printf("Введите ключ второго пространства (4 знака): ");
+                key2 = get_String();
+                }while(strlen(key2) < 1 || strlen(key2) > 4);
+                bug = removeKeySpace2(fd, table->keySpace2, key2, table->maxsize2, &key1);
+                if(bug == 0){
+                    printf("Не удалось найти ничего с таким ключом.\n");
+                }
+                else{
+                    deleteKey1Offset(fd, table->keySpace1, key1, bug, &(table->nsize1));
+                    printf("Успешное удаление.\n");
+                }
+                free(key2);
+                break;
+            case 9:
+                printf("Введите ключ первого пространства: ");
+                key1 = getInt();
+                do{
+                    printf("ВВедите ключ второго пространства: ");
+                    key2 = get_String();
+                }while(strlen(key2) < 1 || strlen(key2) > 4);
+                bug = findKey2(table->keySpace2, key2, table->maxsize2);
+                if(bug != 0){
+                    item = getItem(fd, bug);
+                    if(key1 == item->key1) {
+                        bug = removeKeySpace2(fd, table->keySpace2, key2, table->maxsize2, &key1);
+                        deleteKey1Offset(fd, table->keySpace1, key1, bug, &(table->nsize1));
+                        printf("Успешное удаление.\n");
+                    }
+                    else
+                        printf("Не найдено такого составного ключа.\n");
+                    free(item);
+                }
+                else{
+                    printf("Не найдено предмета.\n");
+                }
+                free(key2);
                 break;
             default:
                 break;

@@ -38,12 +38,13 @@ KeySpace1* initKeySpace1(int maxsize1);
 KeySpace1* loadKeySpace1(FILE *fd, int maxsize1, int nsize1);
 int addItemKeySpace1(KeySpace1* keySpace1, int offsetItem, int key1, int maxsize1, int* nsize1);
 void printKey1(FILE* fd, KeySpace1* keySpace1, int nsize1);
-int removeKeySpace1(KeySpace1* keySpace1, int* nsize1, int key, int release);
+char** removeKeySpace1(FILE* fd, KeySpace1* keySpace1, int* nsize1, int key, int* deletions, int release);
 KeySpace1* findKey1(KeySpace1* keySpace1, int key1, int nsize1);
 Item* findRelease(FILE* fd, KeySpace1* keySpace1, int release);
 int saveKeySpace1(FILE* fd, KeySpace1* keySpace1, int nsize1, int maxsize1);
 int checkKeySpace1(KeySpace1* keySpace1, int key, int maxsize1, int nsize1);
 void freeKeySpace1(KeySpace1* keySpace1, int nsize1);
-void deleteKey1Offset(KeySpace1* keySpace1, int key1, int itemOffset, int* nsize1);
+void deleteKey1Offset(FILE* fd, KeySpace1* keySpace1, int key1, int itemOffset, int* nsize1);
+Item* findOffset1(FILE* fd, KeySpace1* keySpace1, int key, int itemOffset, int nsize);
 
 #endif //LAB3_KEYSPACE1_H

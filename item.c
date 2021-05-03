@@ -74,19 +74,19 @@ void freeItem(FILE* fd, int offsetItem){
     free(item);
 }
 
-int copyItem(FILE* fd, int offsetItem){
-    Item* item = getItem(fd, offsetItem);
-    char* info = getInfo(fd, item);
-    char* key2 = getKey2(fd, item);
-
-    int offset = createItem(fd, info, item->key1, key2);
-
-    free(item);
-    free(info);
-    free(key2);
-
-    return offset;
-}
+//int copyItem(FILE* fd, int offsetItem){
+//    Item* item = getItem(fd, offsetItem);
+//    char* info = getInfo(fd, item);
+//    char* key2 = getKey2(fd, item);
+//
+//    int offset = createItem(fd, info, item->key1, key2);
+//
+//    free(item);
+//    free(info);
+//    free(key2);
+//
+//    return offset;
+//}
 
 void printInfoItem(FILE* fd, Item* item){
 
